@@ -1,0 +1,33 @@
+{
+  "name": "process-compose-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for process-compose",
+  "type": "module",
+  "bin": {
+    "process-compose-mcp": "./src/index.js"
+  },
+  "license": "MIT",
+  "author": "Jesse Dhillon <jesse@dhillon.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jessedhillon/process-compose-mcp"
+  },
+  "keywords": [
+    "mcp",
+    "process-compose",
+    "process",
+    "automation"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.2.0",
+    "zod": "^3.23.8"
+  }
+}

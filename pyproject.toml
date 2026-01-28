@@ -1,0 +1,34 @@
+[project]
+name = "project-name"
+version = "0.0.0"
+description = "description"
+authors = [
+    { name = "Jesse Dhillon",  email = "jesse@dhillon.com" },
+]
+package-mode = true
+
+[tool.poetry.dependencies]
+python = "^3.13"
+
+[tool.poetry.extras]
+dev = []
+
+[tool.poetry.group.dev.dependencies]
+pytest = "*"
+ruff = "*"
+pyright = "*"
+types-setuptools = "*"
+
+[tool.ruff]
+line-length = 120
+lint.select = [ "E", "F", "B", "T" ]
+lint.extend-ignore = [
+    "I",
+    "B008"  # calling function in parameter list
+]
+preview = true
+target-version = "py313"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

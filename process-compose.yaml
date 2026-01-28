@@ -1,0 +1,6 @@
+version: "0.5"
+processes:
+  http:
+    command: "python -m http.server 9001"
+  http2:
+    command: "python -m http.server 9002"

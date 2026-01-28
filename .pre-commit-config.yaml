@@ -1,0 +1,15 @@
+repos:
+- repo: https://github.com/jessedhillon/conventional-msg
+  rev: "0.2.0"
+  hooks:
+  - id: conventional-msg
+    stages: [commit-msg]
+- repo: local
+  hooks:
+  - id: pytest
+    name: pytest
+    entry: .venv/bin/pytest
+    language: script
+    pass_filenames: false
+    always_run: true
+    stages: [pre-push]
