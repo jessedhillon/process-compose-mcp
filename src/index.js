@@ -4,11 +4,8 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 
-const baseUrlArg = process.argv[2] || process.env.PROCESS_COMPOSE_URL;
-if (!baseUrlArg) {
-  console.error("Usage: process-compose-mcp <baseUrl> (or set PROCESS_COMPOSE_URL)");
-  process.exit(1);
-}
+const port = process.env.PC_PORT_NUM || "8080";
+const baseUrlArg = process.argv[2] || `http://localhost:${port}`;
 
 const baseUrl = baseUrlArg.replace(/\/+$/, "");
 

@@ -14,7 +14,7 @@ npm install -g process-compose-mcp
 process-compose-mcp http://localhost:8080
 ```
 
-You can also set `PROCESS_COMPOSE_URL` instead of passing a URL argument.
+If you omit the URL, it will default to `http://localhost:8080` and can be overridden by `PC_PORT_NUM`.
 
 ## Tools
 
