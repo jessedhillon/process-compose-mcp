@@ -4,12 +4,14 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 
-const port = process.env.PC_PORT_NUM || "8080";
-const baseUrlArg = process.argv[2] || `http://localhost:${port}`;
+let baseUrl = null;
 
-const baseUrl = baseUrlArg.replace(/\/+$/, "");
+const notConnectedError = "Not connected. Call connect(port) first to specify which process-compose instance to use.";
 
 const toolSchemas = {
+  connect: z.object({
+    port: z.number().int().positive()
+  }),
   isAlive: z.object({}),
   getProcesses: z.object({}),
   stopProcesses: z.object({
@@ -45,8 +47,20 @@ const toolSchemas = {
 
 const tools = [
   {
+    name: "connect",
+    description: "Connect to a process-compose instance. Must be called before any other tool.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        port: { type: "integer", description: "Port number of the process-compose API server" }
+      },
+      required: ["port"],
+      additionalProperties: false
+    }
+  },
+  {
     name: "isAlive",
-    description: "Check if the process-compose server is responding.",
+    description: "Check if the process-compose server is responding. Requires connect() first.",
     inputSchema: {
       type: "object",
       additionalProperties: false
@@ -54,7 +68,7 @@ const tools = [
   },
   {
     name: "getProcesses",
-    description: "Get all configured processes and their status.",
+    description: "Get all configured processes and their status. Requires connect() first.",
     inputSchema: {
       type: "object",
       additionalProperties: false
@@ -62,7 +76,7 @@ const tools = [
   },
   {
     name: "stopProcesses",
-    description: "Stop multiple processes by name.",
+    description: "Stop multiple processes by name. Requires connect() first.",
     inputSchema: {
       type: "object",
       properties: {
@@ -77,7 +91,7 @@ const tools = [
   },
   {
     name: "getDependencyGraph",
-    description: "Get the process dependency graph with current status.",
+    description: "Get the process dependency graph with current status. Requires connect() first.",
     inputSchema: {
       type: "object",
       additionalProperties: false
@@ -85,7 +99,7 @@ const tools = [
   },
   {
     name: "getProjectName",
-    description: "Get the current project name.",
+    description: "Get the current project name. Requires connect() first.",
     inputSchema: {
       type: "object",
       additionalProperties: false
@@ -93,7 +107,7 @@ const tools = [
   },
   {
     name: "getProjectState",
-    description: "Get the current project state.",
+    description: "Get the current project state. Requires connect() first.",
     inputSchema: {
       type: "object",
       additionalProperties: false
@@ -101,7 +115,7 @@ const tools = [
   },
   {
     name: "getProcess",
-    description: "Get a single process state.",
+    description: "Get a single process state. Requires connect() first.",
     inputSchema: {
       type: "object",
       properties: {
@@ -113,7 +127,7 @@ const tools = [
   },
   {
     name: "getProcessPorts",
-    description: "Get open TCP/UDP ports for a process.",
+    description: "Get open TCP/UDP ports for a process. Requires connect() first.",
     inputSchema: {
       type: "object",
       properties: {
@@ -125,7 +139,7 @@ const tools = [
   },
   {
     name: "getProcessInfo",
-    description: "Get a process configuration.",
+    description: "Get a process configuration. Requires connect() first.",
     inputSchema: {
       type: "object",
       properties: {
@@ -137,7 +151,7 @@ const tools = [
   },
   {
     name: "stopProcess",
-    description: "Stop a single process by name.",
+    description: "Stop a single process by name. Requires connect() first.",
     inputSchema: {
       type: "object",
       properties: {
@@ -149,7 +163,7 @@ const tools = [
   },
   {
     name: "startProcess",
-    description: "Start a single process by name.",
+    description: "Start a single process by name. Requires connect() first.",
     inputSchema: {
       type: "object",
       properties: {
@@ -161,7 +175,7 @@ const tools = [
   },
   {
     name: "restartProcess",
-    description: "Restart a single process by name.",
+    description: "Restart a single process by name. Requires connect() first.",
     inputSchema: {
       type: "object",
       properties: {
@@ -173,7 +187,7 @@ const tools = [
   },
   {
     name: "getProcessLogs",
-    description: "Get static logs for a process.",
+    description: "Get static logs for a process. Requires connect() first.",
     inputSchema: {
       type: "object",
       properties: {
@@ -222,7 +236,7 @@ function encodeName(name) {
 const server = new Server(
   {
     name: "process-compose-mcp",
-    version: "0.1.0"
+    version: "0.2.0"
   },
   {
     capabilities: {
@@ -244,6 +258,40 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     }
 
     const input = schema.parse(args ?? {});
+
+    // Handle connect
+    if (name === "connect") {
+      baseUrl = `http://localhost:${input.port}`;
+      // Verify connectivity
+      try {
+        await requestJson("GET", "/live");
+      } catch (e) {
+        baseUrl = null;
+        throw new Error(`Failed to connect to process-compose on port ${input.port}: ${e.message}`);
+      }
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Connected to process-compose on port ${input.port}`
+          }
+        ]
+      };
+    }
+
+    // All other tools require connection
+    if (!baseUrl) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: notConnectedError
+          }
+        ],
+        isError: true
+      };
+    }
+
     let result;
 
     switch (name) {
